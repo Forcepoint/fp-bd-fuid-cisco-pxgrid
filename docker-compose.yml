@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  pxgrid-service:
+    container_name: pxgrid-service
+    hostname: pxgrid-service
+    image: docker.frcpnt.com/fp-fuid-cisco-ise-pxgrid:latest
+    environment:
+      - PXGRID_CLIENT_ACCOUNT_NAME=${PXGRID_CLIENT_ACCOUNT_NAME}
+      - PXGRID_CLIENT_ACCOUNT_PASSWORD=${PXGRID_CLIENT_ACCOUNT_PASSWORD}
+      - PXGRID_HOST_ADDRESS=${PXGRID_HOST_ADDRESS}
+      - FUID_API_USERNAME=${FUID_API_USERNAME}
+      - FUID_API_PASSWORD=${FUID_API_PASSWORD}
+      - FUID_IP_ADDRESS=${FUID_IP_ADDRESS}
+      - AD_ADMIN_USERNAME=${AD_ADMIN_USERNAME}
+      - AD_ADMIN_PASSWORD=${AD_ADMIN_PASSWORD}
+      - AD_IP_ADDRESS${AD_IP_ADDRESS}
+      - AD_DOMAIN_NAME=${AD_DOMAIN_NAME}
+      - SESSION_LISTENER_INTERVAL_TIME=${SESSION_LISTENER_INTERVAL_TIME}
+      - SAVE_LOGS=${SAVE_LOGS}
+      - DISPLAY_INFO=${DISPLAY_INFO}
+      - INTERNAL_LOGS_FILE=/root/fuid-ise-logs/logs
+      - SESSION_LATEST_TIMESTAMP_PATH=/root/latest-timestamp/timestamp
+      - ISE_PORT=8910
+      - FUID_PORT=5000
+      - AD_PORT=389
+    volumes:
+      - /root/latest-timestamp:/root/latest-timestamp
+      - /root/fuid-ise-logs:/root/fuid-ise-logs
+
