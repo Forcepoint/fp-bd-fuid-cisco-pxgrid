@@ -25,8 +25,8 @@ func Execute() {
 }
 
 func init() {
-	viper.SetDefault("INTERNAL_LOGS_FILE", "")
-	viper.SetDefault("SESSION_LATEST_TIMESTAMP_PATH", "")
+	viper.SetDefault("INTERNAL_LOGS_FILE", "/var/fuid-ise/fuid-ise-logs/log")
+	viper.SetDefault("SESSION_LATEST_TIMESTAMP_PATH", "/var/fuid-ise/latest-timestamp/timestamp")
 	//ISE configs
 	viper.SetDefault("PXGRID_CLIENT_ACCOUNT_NAME", "")
 	viper.SetDefault("PXGRID_CLIENT_ACCOUNT_PASSWORD", "")
