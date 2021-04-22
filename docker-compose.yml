@@ -27,4 +27,5 @@ services:
     volumes:
       - /root/latest-timestamp:/root/latest-timestamp
       - /root/fuid-ise-logs:/root/fuid-ise-logs
+    restart: always
 
