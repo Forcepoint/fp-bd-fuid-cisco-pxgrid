@@ -42,11 +42,11 @@ func init() {
 	viper.SetDefault("AD_PORT", 389)
 	viper.SetDefault("AD_ADMIN_USERNAME", "")
 	viper.SetDefault("AD_ADMIN_PASSWORD", "")
-	viper.SetDefault("AD_DOMAIN_NAME", "i")
+	viper.SetDefault("AD_DOMAIN_NAME", "")
 	viper.SetDefault("LDAP_TIMEOUT", 10)
 	viper.SetDefault("LDAP_PAGES", 500)
 	//other Config
-	viper.SetDefault("SESSION_LISTENER_INTERVAL_TIME", 2)
+	viper.SetDefault("SESSION_LISTENER_INTERVAL_TIME", 3)
 	viper.SetDefault("SAVE_LOGS", false)
 	viper.SetDefault("DISPLAY_INFO", false)
 
