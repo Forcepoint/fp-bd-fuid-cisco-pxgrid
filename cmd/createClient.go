@@ -63,6 +63,10 @@ administrator needs to approve the created client account`,
 func init() {
 	pxgridCmd.AddCommand(createClientCmd)
 	createClientCmd.Flags().StringP("server", "", "", "ISE server DNS name or IP address")
+	if err := viper.BindPFlag("PXGRID_HOST_ADDRESS",
+		createClientCmd.Flags().Lookup("server")); err != nil {
+		logrus.Fatal(err.Error())
+	}
 	if err := createClientCmd.MarkFlagRequired("server"); err != nil {
 		logrus.Fatal(err.Error())
 	}
