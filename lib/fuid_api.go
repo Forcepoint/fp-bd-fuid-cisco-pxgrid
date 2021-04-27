@@ -39,8 +39,7 @@ type FUIDController struct {
 
 // GetTLSConfig Get TLS Config for FUID API
 func (f *FUIDController) GetTLSConfig() (*tls.Config, error) {
-	endpoint := fmt.Sprintf("%s:%d", viper.GetString("FUID_IP_ADDRESS"), viper.GetInt("FUID_PORT"))
-	caCert, err := ExtractServerCert(endpoint)
+	caCert, err := ExtractServerCert(viper.GetString("FUID_IP_ADDRESS"), viper.GetInt("FUID_PORT"))
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +128,11 @@ func (f *FUIDController) SendRequest(endPoint, parameters string, requestBody in
 			req.SetBasicAuth(viper.GetString("FUID_API_USERNAME"), viper.GetString("FUID_API_PASSWORD"))
 		}
 	}
-	return f.client.Do(req)
+	resp, err := f.client.Do(req)
+	if resp == nil {
+		return nil, err
+	}
+	return resp, err
 }
 
 // UserManager manager a session, if your is not exists in FUID database, create it, otherwise update the user IP Addresses ang Groups

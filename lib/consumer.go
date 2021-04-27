@@ -95,7 +95,7 @@ func ProcessSessions(sessions *IseSessions, timeStampFilePath string, fuidContro
 			}
 			// if session event has no ip address do no nothing
 			if sess.IpAddresses == nil || len(sess.IpAddresses) == 0 {
-				logrus.Warningf("received a session event with no ip-address for user %s. this session event is skipt", sess.AdUserSamAccountName)
+				logrus.Warningf("received a session event with no ip-address for user %s. this session event is skipped", sess.AdUserSamAccountName)
 				continue
 			}
 			if err := fuidController.UserManager(&sess, displayProcess); err != nil {

@@ -23,20 +23,20 @@ func (c *Controller) GetTlsConfig() *tls.Config {
 }
 
 // NewControl create a new controller for ISE API
-func NewControl(config *Config) (control *Controller, err error) {
+func NewControl(config *Config) (*Controller, error) {
 	tlsConfig, err := config.GetTLSConfig()
 	if err != nil {
-		return
+		return nil, err
 	}
 	transport := &http.Transport{
 		TLSClientConfig: tlsConfig,
 	}
-	control = &Controller{
+	control := &Controller{
 		config:    config,
 		client:    &http.Client{Transport: transport},
 		tlsConfig: tlsConfig,
 	}
-	return
+	return control, err
 }
 
 // SendRequest Send request to ISE API

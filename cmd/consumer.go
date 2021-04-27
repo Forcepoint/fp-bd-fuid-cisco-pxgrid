@@ -23,6 +23,10 @@ var consumerRestCmd = &cobra.Command{
 			logrus.Exit(1)
 		}
 		fuidController, err := lib.NewFUIDController()
+		if err != nil {
+			logrus.Error(err)
+			logrus.Exit(1)
+		}
 		createClient := lib.CreateClient{NodeName: viper.GetString("PXGRID_CLIENT_ACCOUNT_NAME")}
 		controller, err := lib.GetController()
 		if err != nil {

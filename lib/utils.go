@@ -28,10 +28,10 @@ func GetController() (*Controller, error) {
 	return controller, nil
 }
 
-func ExtractServerCert(endpoint string) ([]byte, error) {
+func ExtractServerCert(host string, port int) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	c := fmt.Sprintf("openssl s_client -connect %s 2> /dev/null | sed -n '/^-----BEGIN CERTIFICATE-----$/,/^-----END CERTIFICATE-----$/p'", endpoint)
+	c := fmt.Sprintf("openssl s_client -connect %s:%d 2> /dev/null | sed -n '/^-----BEGIN CERTIFICATE-----$/,/^-----END CERTIFICATE-----$/p'", host, port)
 	cmd := exec.CommandContext(ctx, "bash", "-c", c)
 	out, err := cmd.Output()
 	if ctx.Err() == context.DeadlineExceeded {
