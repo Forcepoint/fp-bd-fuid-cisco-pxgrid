@@ -35,7 +35,7 @@ func ExtractServerCert(host string, port int) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, "bash", "-c", c)
 	out, err := cmd.Output()
 	if ctx.Err() == context.DeadlineExceeded {
-		return nil, errors.New("timeout exceed for extracting the server certificate")
+		return nil, errors.New(fmt.Sprintf("timeout exceed for extracting the server certificate, ensure the integration host-machine can reach %s", host))
 	}
 	if err != nil {
 		return nil, err
