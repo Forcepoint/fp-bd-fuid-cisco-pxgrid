@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch Cisco pxgrid session events.
+
+[Service]
+Restart=always
+RestartSec=10
+ExecStart=/var/fuid-ise/fuid-ise pxgrid consumer --config /var/fuid-ise/fuid-ise.yml
+
+[Install]
+WantedBy=multi-user.target

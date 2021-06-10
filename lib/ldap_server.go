@@ -1,11 +1,14 @@
 package lib
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"gopkg.in/ldap.v2"
+	"io/ioutil"
 	"log"
 	"strings"
 	"time"
@@ -32,21 +35,18 @@ type Attributes struct {
 }
 
 func NewADConnector() (*ldap.Conn, error) {
-	if viper.GetString("AD_ADMIN_USERNAME") == "" {
-		return nil, errors.New("AD Admin username is not provided")
+	if viper.GetString("AD_LDAP_USER_DN") == "" {
+		return nil, errors.New("AD LDAP username is not provided")
 	}
-	ldapUsername, err := generateLdapUserDn(viper.GetString("AD_ADMIN_USERNAME"))
-	if err != nil {
-		return nil, err
-	}
-	if viper.GetString("AD_IP_ADDRESS") == "" {
+	ldapUsername := viper.GetString("AD_LDAP_USER_DN")
+	if viper.GetString("AD_LDAP_HOST") == "" {
 		return nil, errors.New("AD Domain Controller Ip address is not provided")
 	}
-	if viper.GetString("AD_ADMIN_PASSWORD") == "" {
+	if viper.GetString("AD_LDAP_PASSWORD") == "" {
 		return nil, errors.New("AD Domain Controller admin password is not provided")
 	}
-	ldapConnector, err := connectToDirectoryServer(viper.GetString("AD_IP_ADDRESS"), viper.GetInt("AD_PORT"),
-		ldapUsername, viper.GetString("AD_ADMIN_PASSWORD"), viper.GetInt("LDAP_TIMEOUT"))
+	ldapConnector, err := connectToDirectoryServerTLS(viper.GetString("AD_LDAP_HOST"), viper.GetInt("AD_PORT"),
+		ldapUsername, viper.GetString("AD_LDAP_PASSWORD"), viper.GetInt("LDAP_TIMEOUT"), true, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +54,7 @@ func NewADConnector() (*ldap.Conn, error) {
 
 }
 
+// connect to LDAP
 func connectToDirectoryServer(Host string, Port int, Username, Password string, ConnTimeout int) (*ldap.Conn, error) {
 	ldap.DefaultTimeout = time.Duration(ConnTimeout) * time.Second
 	ldapConnector, err := ldap.Dial("tcp", fmt.Sprintf("%s:%d", Host, Port))
@@ -67,7 +68,57 @@ func connectToDirectoryServer(Host string, Port int, Username, Password string, 
 	return ldapConnector, nil
 }
 
-func getFromLDAP(connect *ldap.Conn, LDAPBaseDN, LDAPFilter string, LDAPAttribute []string, LDAPPage uint32) (*[]LdapEntity, error) {
+// connect to LDAPs
+func connectToDirectoryServerTLS(Host string, Port int, Username, Password string, ConnTimeout int, CRTInsecureSkipVerify bool,
+	CRTValidFor, CRTPath string) (*ldap.Conn, error) {
+	ldap.DefaultTimeout = time.Duration(ConnTimeout) * time.Second
+	tlsConfig := new(tls.Config)
+	var err error
+	if !CRTInsecureSkipVerify {
+		tlsConfig, err = tlsConfigNoSkipVerify(CRTInsecureSkipVerify, CRTValidFor, CRTPath)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		tlsConfig = tlsConfigSkipVerify(CRTInsecureSkipVerify)
+	}
+	ldapConnector, err := ldap.DialTLS("tcp", fmt.Sprintf("%s:%d", Host, Port), tlsConfig)
+	if err != nil {
+		if strings.Contains(err.Error(), "connection reset by peer") {
+			return nil, errors.Errorf("Failed in dialing LDAP with TLS. ensure LDAP server is configured to use SSL over port 636")
+		}
+		return nil, err
+	}
+	err = ldapConnector.Bind(Username, Password)
+	if err != nil {
+		return nil, err
+	}
+	return ldapConnector, nil
+}
+
+// skip TLS verification
+func tlsConfigSkipVerify(CRTInsecureSkipVerify bool) *tls.Config {
+	tlsConfig := new(tls.Config)
+	tlsConfig.InsecureSkipVerify = CRTInsecureSkipVerify
+	return tlsConfig
+}
+
+// verify TLS cert
+func tlsConfigNoSkipVerify(CRTInsecureSkipVerify bool, CRTValidFor, CRTPath string) (*tls.Config, error) {
+	tlsConfig := new(tls.Config)
+	caCert, err := ioutil.ReadFile(CRTPath)
+	if err != nil {
+		return nil, err
+	}
+	pool := x509.NewCertPool()
+	pool.AppendCertsFromPEM(caCert)
+	tlsConfig.InsecureSkipVerify = CRTInsecureSkipVerify
+	tlsConfig.ServerName = CRTValidFor
+	tlsConfig.RootCAs = pool
+	return tlsConfig, nil
+}
+
+func getFromLDAP(connect *ldap.Conn, LDAPBaseDN, LDAPFilter string, LDAPAttribute []string, LDAPPage uint32) ([]LdapEntity, error) {
 	searchRequest := ldap.NewSearchRequest(LDAPBaseDN, ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		0, 0, false, LDAPFilter, LDAPAttribute, nil)
 	sr, err := connect.SearchWithPaging(searchRequest, LDAPPage)
@@ -83,7 +134,7 @@ func getFromLDAP(connect *ldap.Conn, LDAPBaseDN, LDAPFilter string, LDAPAttribut
 		}
 		ADElements = append(ADElements, *NewADEntity)
 	}
-	return &ADElements, nil
+	return ADElements, nil
 }
 
 func GetLdapElement(username string, ldapConnector *ldap.Conn) (*LdapElement, error) {
@@ -91,54 +142,49 @@ func GetLdapElement(username string, ldapConnector *ldap.Conn) (*LdapElement, er
 	if err != nil {
 		return nil, err
 	}
-	filter := fmt.Sprintf(LdapFilerFormat, username)
-	attributes := strings.Split(LdapAttributes, ",")
+	filter := fmt.Sprintf(viper.GetString("LDAP_FILTER"), username)
+	attributes := strings.Split(viper.GetString("LDAP_ATTRIBUTES"), ",")
 	LDAPElements, err := getFromLDAP(ldapConnector, baseDn, filter, attributes, uint32(viper.GetInt("LDAP_PAGES")))
 	if err != nil {
 		return nil, err
 	}
-	userDn, err := generateLdapUserDn(username)
-	if err != nil {
-		return nil, err
+	if len(LDAPElements) == 0 {
+		return nil, errors.Errorf("could not find use %s in LDAP database", username)
 	}
-	user, err := HandleElement(LDAPElements, userDn)
+	if len(LDAPElements) > 1 {
+		return nil, errors.Errorf("multiple user with name: %s found in LDAP database", username)
+
+	}
+	user, err := HandleElement(LDAPElements[0])
 	if err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func HandleElement(element *[]LdapEntity, dn string) (*LdapElement, error) {
-	if len(*element) == 0 {
-		return nil, errors.New("not found")
-	}
-	for _, i := range *element {
-		if i.DN == dn {
-
-			var ldapElement LdapElement
-			ldapElement.DN = i.DN
-			for _, maps := range i.Attributes {
-				for key, value := range maps {
-					switch key {
-					case "cn":
-						ldapElement.Attributes.Cn = value.([]string)[0]
-					case "memberOf":
-						ldapElement.Attributes.MemberOf = value.([]string)
-					case "objectGUID":
-						s, r := uuid.Parse(fmt.Sprintf("%x", value.([]string)[0][:]))
-						if r != nil {
-							log.Fatal(r)
-						}
-						ldapElement.Attributes.ObjectGUID = handleGUID(s.String())
-					case "sAMAccountName":
-						ldapElement.Attributes.SAMAccountName = value.([]string)[0]
-					}
+func HandleElement(element LdapEntity) (*LdapElement, error) {
+	var ldapElement LdapElement
+	ldapElement.DN = element.DN
+	for _, maps := range element.Attributes {
+		for key, value := range maps {
+			switch key {
+			case "cn":
+				ldapElement.Attributes.Cn = value.([]string)[0]
+			case "memberOf":
+				ldapElement.Attributes.MemberOf = value.([]string)
+			case "objectGUID":
+				s, r := uuid.Parse(fmt.Sprintf("%x", value.([]string)[0][:]))
+				if r != nil {
+					log.Fatal(r)
 				}
+				ldapElement.Attributes.ObjectGUID = handleGUID(s.String())
+			case "sAMAccountName":
+				ldapElement.Attributes.SAMAccountName = value.([]string)[0]
 			}
-			return &ldapElement, nil
 		}
 	}
-	return nil, errors.New("not found")
+	return &ldapElement, nil
+
 }
 
 func handleGUID(guid string) string {

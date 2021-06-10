@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	NotFound error = errors.New("Not Found")
+	NotFound error = errors.New("User Not Found in FUID Database")
 )
 
 const (
@@ -34,8 +34,7 @@ const (
 	ChangeTypeModify         = "modify"
 	ChangeTypeDelete         = "delete"
 	//LDAP
-	LdapFilerFormat = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=%s))"
-	LdapAttributes  = "memberOf,objectclass,objectGUID,sAMAccountName,userPrincipalName,CN"
+
 )
 
 func GetEndpointUrl(endpointName string) string {

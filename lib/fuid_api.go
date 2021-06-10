@@ -150,7 +150,7 @@ func (f *FUIDController) UserManager(sess *Sessions, displayProcess bool) error 
 				return err
 			}
 			if displayProcess {
-				logrus.Infof("Connecting with AD Domain Conttroler %s", viper.GetString("AD_IP_ADDRESS"))
+				logrus.Infof("Connecting with AD Domain Conttroler %s", viper.GetString("AD_LDAP_HOST"))
 			}
 			defer ldapConnector.Close()
 			userEntity, err := GetLdapElement(sess.AdUserSamAccountName, ldapConnector)
