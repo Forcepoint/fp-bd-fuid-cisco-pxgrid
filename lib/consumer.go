@@ -98,8 +98,10 @@ func ProcessSessions(sessions *IseSessions, timeStampFilePath string, fuidContro
 				logrus.Warningf("received a session event with no ip-address for user %s. this session event is skipped", sess.AdUserSamAccountName)
 				continue
 			}
-			if err := fuidController.UserManager(&sess, displayProcess); err != nil {
-				return err
+			if sess.State == AUTHENTICATED || sess.State == DISCONNECTED {
+				if err := fuidController.UserManager(&sess, displayProcess); err != nil {
+					return err
+				}
 			}
 		}
 	}

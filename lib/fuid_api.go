@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -138,13 +139,27 @@ func (f *FUIDController) SendRequest(endPoint, parameters string, requestBody in
 // UserManager manager a session, if your is not exists in FUID database, create it, otherwise update the user IP Addresses ang Groups
 func (f *FUIDController) UserManager(sess *Sessions, displayProcess bool) error {
 	userAccountName := sess.AdUserSamAccountName
+	if userAccountName == "" {
+		userAccountName = sess.AdNormalizedUser
+	}
+	if userAccountName == "" {
+		if sess.Username == "" {
+			return errors.Errorf("can not process session, AdUserSamAccountName, AdNormalizedUser and Username are empty: %+v", sess)
+		}
+		usernameParts := strings.Split(sess.Username, "@")
+		userAccountName = usernameParts[0]
+	}
 	useNetBiosName := sess.AdUserNetBiosName
+	if useNetBiosName == "" {
+		return errors.Errorf("can not process session, AdUserNetBiosName is empty: %+v", sess)
+	}
 	username := fmt.Sprintf("%s\\%s", useNetBiosName, userAccountName)
+	logrus.Info(username)
 	user, err := f.GetUser(username)
 	if err != nil {
 		if err == NotFound {
 			//connect to AD and read the user Object
-			logrus.Warningf("User %s is not exist in FUID Database", sess.AdUserSamAccountName)
+			logrus.Warningf("User '%s' is not exist in FUID Database", sess.AdUserSamAccountName)
 			ldapConnector, err := NewADConnector()
 			if err != nil {
 				return err
