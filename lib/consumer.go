@@ -93,12 +93,17 @@ func ProcessSessions(sessions *IseSessions, timeStampFilePath string, fuidContro
 			if sess.Timestamp.After(*maxTimeStamp) && !sess.Timestamp.Equal(*maxTimeStamp) {
 				maxTimeStamp = sess.Timestamp
 			}
-			// if session event has no ip address do no nothing
-			if sess.IpAddresses == nil || len(sess.IpAddresses) == 0 {
-				logrus.Warningf("received a session event with no ip-address for user %s. this session event is skipped", sess.AdUserSamAccountName)
-				continue
-			}
 			if sess.State == AUTHENTICATED || sess.State == DISCONNECTED {
+				//ignore unknown sessions
+				if sess.AdUserNetBiosName == "" && viper.GetBool("IGNORE_UNKNOWN_SESSIONS") {
+					logrus.Warnf("user %s is not a memeber of the Active Directory. the user's %s session is ignored", sess.State, sess.Username)
+					continue
+				}
+				// if session event has no ip address do no nothing
+				if sess.IpAddresses == nil || len(sess.IpAddresses) == 0 {
+					logrus.Warningf("received a session event with no ip-address for user %s. this session event is ignored", sess.AdUserSamAccountName)
+					continue
+				}
 				if err := fuidController.UserManager(&sess, displayProcess); err != nil {
 					return err
 				}

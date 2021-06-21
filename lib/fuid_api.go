@@ -144,14 +144,14 @@ func (f *FUIDController) UserManager(sess *Sessions, displayProcess bool) error 
 	}
 	if userAccountName == "" {
 		if sess.Username == "" {
-			return errors.Errorf("can not process session, AdUserSamAccountName, AdNormalizedUser and Username are empty: %+v", sess)
+			return errors.Errorf("User %s is not avaiable in Active Directory, set IGNORE_UNKNOWN_SESSIONS in the config file to true to ingone unknown sessions", sess.Username)
 		}
 		usernameParts := strings.Split(sess.Username, "@")
 		userAccountName = usernameParts[0]
 	}
 	useNetBiosName := sess.AdUserNetBiosName
 	if useNetBiosName == "" {
-		return errors.Errorf("can not process session, AdUserNetBiosName is empty: %+v", sess)
+		return errors.Errorf("User %s is not avaiable in Active Directory, set IGNORE_UNKNOWN_SESSIONS in the config file to true to ingone unknown sessions", sess.Username)
 	}
 	username := fmt.Sprintf("%s\\%s", useNetBiosName, userAccountName)
 	logrus.Info(username)

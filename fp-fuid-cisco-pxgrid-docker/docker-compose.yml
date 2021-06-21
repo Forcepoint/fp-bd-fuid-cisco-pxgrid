@@ -21,6 +21,7 @@ services:
       - DISPLAY_INFO=${DISPLAY_INFO}
       - INTERNAL_LOGS_FILE=/root/fuid-ise-logs/logs
       - SESSION_LATEST_TIMESTAMP_PATH=/root/latest-timestamp/timestamp
+      - IGNORE_UNKNOWN_SESSIONS=${IGNORE_UNKNOWN_SESSIONS}
       - ISE_PORT=8910
       - FUID_PORT=5000
       - AD_PORT=636

@@ -51,6 +51,7 @@ func init() {
 	viper.SetDefault("SESSION_LISTENER_INTERVAL_TIME", 3)
 	viper.SetDefault("SAVE_LOGS", false)
 	viper.SetDefault("DISPLAY_INFO", false)
+	viper.SetDefault("IGNORE_UNKNOWN_SESSIONS", true)
 
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "YAML config file ")
